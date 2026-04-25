@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ValueScan v2 — Datos Reales</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Syne+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0e15;--bg2:#101520;--bg3:#161c28;--bg4:#1c2335;
+  --border:#232d40;--border2:#2c3850;
+  --text:#dde4ef;--text2:#7a90aa;--text3:#3d5068;
+  --gold:#e8b84b;--gold2:#f5d38a;--gbg:rgba(232,184,75,.09);
+  --green:#3ecf7a;--grbg:rgba(62,207,122,.09);
+  --red:#f06060;--rdbg:rgba(240,96,96,.09);
+  --blue:#5aabff;--blbg:rgba(90,171,255,.09);
+  --amber:#f5a843;--ambg:rgba(245,168,67,.09);
+  --r:10px;--r2:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.logo{font-size:20px;font-weight:800;letter-spacing:-.4px;display:flex;align-items:baseline;gap:2px;}
+.logo em{color:var(--gold);font-style:normal;}
+.logo sup{font-size:9px;color:var(--text3);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-left:5px;}
+.logo .badge{font-family:'Syne Mono',monospace;font-size:9px;background:var(--grbg);color:var(--green);border:1px solid rgba(62,207,122,.3);padding:2px 8px;border-radius:20px;margin-left:8px;}
+#statusDot{display:flex;align-items:center;gap:8px;font-family:'Syne Mono',monospace;font-size:11px;color:var(--text3);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:all .3s;}
+.dot.green{background:var(--green);box-shadow:0 0 6px var(--green);}
+.dot.amber{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+.dot.red{background:var(--red);box-shadow:0 0 6px var(--red);}
+main{max-width:980px;margin:0 auto;padding:28px 20px 80px;}
+
+/* SETUP BANNER */
+.setup-banner{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);padding:20px;margin-bottom:20px;}
+.setup-banner h3{font-size:14px;color:var(--gold);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.setup-banner p{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px;}
+.setup-banner a{color:var(--blue);text-decoration:none;}
+.setup-banner a:hover{text-decoration:underline;}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.sf label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:5px;}
+.sf-row{display:flex;gap:8px;}
+.sf-inp{font-family:'Syne Mono',monospace;font-size:12px;flex:1;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r);padding:9px 14px;color:var(--text);outline:none;transition:border-color .2s;}
+.sf-inp:focus{border-color:var(--gold);}
+.sf-inp::placeholder{color:var(--text3);}
+.sf-status{font-size:10px;margin-top:4px;min-height:14px;}
+.sf-status.ok{color:var(--green);}
+.sf-status.no{color:var(--text3);}
+.btn-save{background:var(--gold);color:var(--bg);border:none;border-radius:var(--r);padding:9px 16px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-save:hover{background:var(--gold2);}
+
+/* SEARCH */
+.search-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px 22px;margin-bottom:20px;}
+.search-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:block;}
+.search-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.ticker-inp{font-family:'Syne Mono',monospace;font-size:22px;color:var(--gold);background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r);padding:10px 16px;width:150px;text-transform:uppercase;letter-spacing:.06em;outline:none;transition:border-color .2s,box-shadow .2s;}
+.ticker-inp:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,184,75,.12);}
+.ticker-inp::placeholder{color:var(--text3);font-size:17px;}
+select.vsel{font-family:'Syne',sans-serif;font-size:13px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r);padding:10px 13px;color:var(--text);cursor:pointer;outline:none;}
+.btn-analyze{background:var(--gold);color:var(--bg);border:none;border-radius:var(--r);padding:10px 22px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.btn-analyze:hover{background:var(--gold2);transform:translateY(-1px);}
+.btn-analyze:active{transform:scale(.97);}
+.btn-analyze:disabled{background:var(--bg4);color:var(--text3);cursor:not-allowed;transform:none;}
+
+/* HISTORY */
+.hist-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+.hist-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;}
+.hist-chip{font-family:'Syne Mono',monospace;font-size:11px;padding:4px 13px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;color:var(--text2);transition:all .15s;}
+.hist-chip:hover{border-color:var(--gold);color:var(--gold);background:var(--gbg);}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:80px 20px;color:var(--text3);}
+.empty-icon{font-size:52px;margin-bottom:16px;opacity:.3;}
+.empty-h{font-family:'Lora',serif;font-size:22px;color:var(--text2);margin-bottom:8px;font-style:italic;}
+.empty-p{font-size:13px;line-height:1.7;max-width:380px;margin:0 auto;}
+
+/* LOADING */
+.loading-wrap{display:none;text-align:center;padding:60px 20px;}
+.loading-wrap.on{display:block;}
+.spinner{width:38px;height:38px;border:3px solid var(--bg4);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 18px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.load-msg{font-size:13px;color:var(--text2);margin-bottom:16px;}
+.load-tk{font-family:'Syne Mono',monospace;color:var(--gold);}
+.load-steps{display:flex;flex-direction:column;gap:7px;align-items:center;}
+.load-step{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px;transition:color .3s;}
+.load-step.active{color:var(--amber);}
+.load-step.done{color:var(--green);}
+.step-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:all .3s;}
+.load-step.active .step-dot{background:var(--amber);box-shadow:0 0 5px var(--amber);}
+.load-step.done .step-dot{background:var(--green);}
+
+/* DASHBOARD */
+#dash{display:none;}
+#dash.on{display:block;animation:slideUp .35s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+/* TOP STRIP */
+.top-strip{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
+.ts-left{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.ts-ticker{font-family:'Syne Mono',monospace;font-size:30px;color:var(--gold);letter-spacing:.04em;}
+.ts-name{font-size:12px;color:var(--text2);margin-top:3px;}
+.ts-sep{width:1px;height:44px;background:var(--border2);}
+.ts-price{font-family:'Syne Mono',monospace;font-size:24px;}
+.ts-chg{font-size:12px;margin-top:3px;}
+.ts-chg.up{color:var(--green);}
+.ts-chg.dn{color:var(--red);}
+.ts-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;}
+.ts-val{font-family:'Syne Mono',monospace;font-size:14px;color:var(--text2);margin-top:2px;}
+.verdict-pill{padding:8px 20px;border-radius:30px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.verdict-pill.buy{background:rgba(62,207,122,.12);color:var(--green);border:1px solid rgba(62,207,122,.3);}
+.verdict-pill.hold{background:rgba(245,168,67,.12);color:var(--amber);border:1px solid rgba(245,168,67,.3);}
+.verdict-pill.sell{background:rgba(240,96,96,.12);color:var(--red);border:1px solid rgba(240,96,96,.3);}
+.verdict-detail{font-size:11px;color:var(--text2);margin-top:5px;text-align:right;max-width:240px;}
+.src-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.src-chip{font-size:10px;padding:3px 10px;border-radius:20px;font-family:'Syne Mono',monospace;font-weight:500;}
+.src-chip.live{background:var(--grbg);color:var(--green);border:1px solid rgba(62,207,122,.3);}
+.src-chip.est{background:var(--ambg);color:var(--amber);border:1px solid rgba(245,168,67,.3);}
+.src-note{font-size:11px;color:var(--text3);}
+
+/* GRIDS */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
+
+/* PANEL */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;}
+.panel-h{padding:12px 18px 11px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;justify-content:space-between;}
+.ph-l{display:flex;align-items:center;gap:6px;}
+.live-badge{font-size:9px;padding:2px 7px;border-radius:20px;background:var(--grbg);color:var(--green);border:1px solid rgba(62,207,122,.3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.est-badge{font-size:9px;padding:2px 7px;border-radius:20px;background:var(--ambg);color:var(--amber);border:1px solid rgba(245,168,67,.3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.panel-b{padding:14px 16px;}
+
+/* METRIC */
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;}
+.mc-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.mc-val{font-family:'Syne Mono',monospace;font-size:20px;}
+.mc-val.g{color:var(--green);}
+.mc-val.a{color:var(--amber);}
+.mc-val.r{color:var(--red);}
+.mc-sub{font-size:10px;color:var(--text3);margin-top:3px;}
+.mc-src{font-size:9px;margin-top:4px;padding:1px 6px;border-radius:10px;display:inline-block;}
+.mc-src.live{background:var(--grbg);color:var(--green);}
+.mc-src.est{background:var(--ambg);color:var(--amber);}
+
+/* SPECIAL CARDS */
+.spc{background:var(--bg2);border:1.5px solid rgba(232,184,75,.2);border-radius:var(--r2);padding:16px 18px;position:relative;overflow:hidden;}
+.spc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);}
+.spc-title{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.spc-val{font-family:'Syne Mono',monospace;font-size:26px;}
+.spc-val.g{color:var(--green);}
+.spc-val.a{color:var(--amber);}
+.spc-val.r{color:var(--red);}
+.spc-sub{font-size:11px;color:var(--text2);margin-top:4px;line-height:1.5;}
+.spc-interp{font-size:11px;margin-top:9px;padding:7px 10px;border-radius:7px;line-height:1.55;}
+.spc-interp.g{background:var(--grbg);color:var(--green);}
+.spc-interp.a{background:var(--ambg);color:var(--amber);}
+.spc-interp.r{background:var(--rdbg);color:var(--red);}
+
+/* INFO BTN */
+.ib{width:14px;height:14px;border-radius:50%;background:var(--bg4);color:var(--text3);font-size:8px;font-weight:700;border:1px solid var(--border2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;transition:all .15s;vertical-align:middle;}
+.ib:hover{background:var(--gbg);border-color:var(--gold);color:var(--gold);}
+.tip{display:none;position:absolute;bottom:22px;left:50%;transform:translateX(-50%);width:240px;background:#080b11;border:1px solid var(--border2);color:var(--text2);font-size:11px;line-height:1.6;padding:10px 12px;border-radius:8px;z-index:999;pointer-events:none;font-family:'Syne',sans-serif;font-weight:400;text-align:left;text-transform:none;letter-spacing:0;box-shadow:0 8px 32px rgba(0,0,0,.6);}
+.tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#080b11;}
+.ib:hover .tip{display:block;}
+
+/* ROW */
+.ri{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);gap:8px;}
+.ri:last-child{border-bottom:none;}
+.ri-l{display:flex;align-items:center;gap:5px;}
+.ri-lbl{font-size:12px;color:var(--text2);}
+.ri-r{display:flex;align-items:center;gap:6px;}
+.ri-val{font-family:'Syne Mono',monospace;font-size:12px;}
+.ri-val.g{color:var(--green);}
+.ri-val.a{color:var(--amber);}
+.ri-val.r{color:var(--red);}
+.ri-src{font-size:9px;padding:1px 5px;border-radius:8px;}
+.ri-src.live{background:var(--grbg);color:var(--green);}
+.ri-src.est{background:var(--ambg);color:var(--amber);}
+
+/* TAGS */
+.tags{display:flex;flex-wrap:wrap;gap:7px;}
+.tag{font-size:11px;padding:4px 11px;border-radius:20px;font-weight:500;}
+.tag.g{background:var(--grbg);color:var(--green);border:1px solid rgba(62,207,122,.2);}
+.tag.r{background:var(--rdbg);color:var(--red);border:1px solid rgba(240,96,96,.2);}
+
+/* RANGE BAR */
+.rbar-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:7px;}
+.rbar-track{position:relative;height:8px;background:var(--bg4);border-radius:4px;overflow:visible;}
+.rbar-fill{position:absolute;height:100%;width:100%;border-radius:4px;background:linear-gradient(90deg,var(--red),var(--amber),var(--green));}
+.rbar-dot{position:absolute;width:14px;height:14px;background:var(--gold);border-radius:50%;top:-3px;transform:translateX(-50%);border:2px solid var(--bg);box-shadow:0 0 0 2px var(--gold);}
+.rbar-hint{font-size:10px;color:var(--text3);text-align:center;margin-top:8px;}
+
+/* SCENARIOS */
+.scn{border-radius:var(--r);padding:14px;}
+.scn.bull{background:var(--grbg);border:1px solid rgba(62,207,122,.2);}
+.scn.base{background:var(--blbg);border:1px solid rgba(90,171,255,.2);}
+.scn.bear{background:var(--rdbg);border:1px solid rgba(240,96,96,.2);}
+.scn-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.scn-name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
+.scn.bull .scn-name{color:var(--green);}
+.scn.base .scn-name{color:var(--blue);}
+.scn.bear .scn-name{color:var(--red);}
+.scn-prob{font-family:'Syne Mono',monospace;font-size:10px;}
+.scn.bull .scn-prob{color:var(--green);}
+.scn.base .scn-prob{color:var(--blue);}
+.scn.bear .scn-prob{color:var(--red);}
+.scn-price{font-family:'Syne Mono',monospace;font-size:20px;}
+.scn.bull .scn-price{color:var(--green);}
+.scn.base .scn-price{color:var(--blue);}
+.scn.bear .scn-price{color:var(--red);}
+.scn-up{font-size:11px;margin-top:2px;}
+.scn.bull .scn-up{color:var(--green);}
+.scn.base .scn-up{color:var(--blue);}
+.scn.bear .scn-up{color:var(--red);}
+.scn-desc{font-size:11px;color:var(--text2);margin-top:8px;line-height:1.55;}
+
+/* TESIS */
+.tesis-txt{font-family:'Lora',serif;font-size:14px;line-height:1.85;color:var(--text2);white-space:pre-wrap;}
+.disclaimer{margin-top:24px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);font-size:11px;color:var(--text3);line-height:1.65;}
+
+@media(max-width:660px){
+  .g4,.g3,.g5{grid-template-columns:1fr 1fr;}
+  .g2{grid-template-columns:1fr;}
+  .ts-sep{display:none;}
+  .setup-grid{grid-template-columns:1fr;}
+  header{padding:0 14px;}
+  main{padding:16px 12px 60px;}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Value<em>Scan</em><sup>v2</sup><span class="badge">LIVE DATA</span></div>
+  <div id="statusDot"><div class="dot" id="dot"></div><span id="statusTxt">Listo</span></div>
+</header>
+<main>
+
+  <!-- SETUP BANNER -->
+  <div class="setup-banner" id="setupBanner">
+    <h3>🔑 Configuración de API Keys</h3>
+    <p>
+      <strong style="color:var(--text)">Anthropic</strong> → <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> → API Keys → Create Key<br>
+      <strong style="color:var(--text)">Alpha Vantage</strong> → <a href="https://www.alphavantage.co/support/#api-key" target="_blank">alphavantage.co</a> → Get Free API Key (gratis, sin tarjeta)<br>
+      <span style="color:var(--text3);font-size:11px;">En modo cloud las keys se configuran en Railway (Variables de entorno). Nunca se exponen al browser.</span>
+    </p>
+    <div class="setup-grid">
+      <div class="sf">
+        <label>Anthropic API Key</label>
+        <div class="sf-row">
+          <input class="sf-inp" id="anthropicKey" type="password" placeholder="sk-ant-api03-..." />
+          <button class="btn-save" onclick="saveKeys()">Guardar</button>
+        </div>
+        <div class="sf-status" id="stAnthropic"></div>
+      </div>
+      <div class="sf">
+        <label>Alpha Vantage API Key</label>
+        <div class="sf-row">
+          <input class="sf-inp" id="avKey" type="password" placeholder="XXXXXXXXXXXXXXXXXX" />
+          <button class="btn-save" onclick="saveKeys()">Guardar</button>
+        </div>
+        <div class="sf-status" id="stAV"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-panel">
+    <span class="search-label">Empresa a analizar (ticker NYSE / NASDAQ)</span>
+    <div class="search-row">
+      <input class="ticker-inp" id="tickerInp" type="text" placeholder="MELI" maxlength="8" />
+      <select class="vsel" id="profileSel">
+        <option value="agresivo">Perfil: Agresivo</option>
+        <option value="moderado">Perfil: Moderado</option>
+        <option value="conservador">Perfil: Conservador</option>
+      </select>
+      <select class="vsel" id="horizonSel">
+        <option value="18">Horizonte: 18 meses</option>
+        <option value="12">Horizonte: 12 meses</option>
+        <option value="24">Horizonte: 24 meses</option>
+        <option value="36">Horizonte: 36 meses</option>
+      </select>
+      <button class="btn-analyze" id="analyzeBtn" onclick="run()">⚡ Analizar</button>
+    </div>
+  </div>
+
+  <div class="hist-row" id="histRow" style="display:none;">
+    <span class="hist-lbl">Recientes:</span>
+    <div id="histChips"></div>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">📊</div>
+    <div class="empty-h">Ingresá un ticker para comenzar</div>
+    <div class="empty-p">Datos reales de <strong style="color:var(--amber)">Alpha Vantage</strong> + análisis por <strong style="color:var(--gold)">Claude IA</strong>.<br><br>Precio · P/E · EV/EBITDA · Shiller P/E · ROE histórico · Escenarios · Tesis</div>
+  </div>
+
+  <div class="loading-wrap" id="loadWrap">
+    <div class="spinner"></div>
+    <div class="load-msg">Analizando <span class="load-tk" id="loadTk"></span></div>
+    <div class="load-steps">
+      <div class="load-step" id="s1"><div class="step-dot"></div>Conectando a Alpha Vantage...</div>
+      <div class="load-step" id="s2"><div class="step-dot"></div>Obteniendo precio y overview...</div>
+      <div class="load-step" id="s3"><div class="step-dot"></div>Descargando balances históricos...</div>
+      <div class="load-step" id="s4"><div class="step-dot"></div>Calculando Shiller P/E y ROE histórico...</div>
+      <div class="load-step" id="s5"><div class="step-dot"></div>Generando análisis con IA...</div>
+    </div>
+  </div>
+
+  <div id="dash">
+    <div class="top-strip" id="topStrip"></div>
+    <div class="src-bar" id="srcBar"></div>
+    <div class="g2" id="specialGrid" style="margin-bottom:14px;"></div>
+    <div class="g5" id="metricsGrid"></div>
+    <div class="g2">
+      <div class="panel">
+        <div class="panel-h"><div class="ph-l">📐 Valuación</div><span id="valBadge"></span></div>
+        <div class="panel-b" id="valRows"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><div class="ph-l">📈 Rentabilidad & Crecimiento</div><span id="profBadge"></span></div>
+        <div class="panel-b" id="profRows"></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="panel">
+        <div class="panel-h"><div class="ph-l">📉 Análisis Técnico</div><span id="techBadge"></span></div>
+        <div class="panel-b" id="techRows"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><div class="ph-l">🗺️ Rango 52 Semanas</div></div>
+        <div class="panel-b" id="techRange"></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="panel">
+        <div class="panel-h"><div class="ph-l">🚀 Catalizadores alcistas</div></div>
+        <div class="panel-b"><div class="tags" id="cats"></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><div class="ph-l">⚠️ Riesgos principales</div></div>
+        <div class="panel-b"><div class="tags" id="risks"></div></div>
+      </div>
+    </div>
+    <div class="g3" id="scGrid" style="margin-bottom:14px;"></div>
+    <div class="g2">
+      <div class="panel">
+        <div class="panel-h"><div class="ph-l">📝 Tesis de inversión</div></div>
+        <div class="panel-b"><div class="tesis-txt" id="tesisTxt"></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><div class="ph-l">📋 Estrategia de entrada</div></div>
+        <div class="panel-b" id="entryRows"></div>
+      </div>
+    </div>
+    <div class="disclaimer">⚠️ <strong>Aviso:</strong> Los datos provienen de Alpha Vantage (pueden tener demoras de 15–20 min en el precio). El Shiller P/E es una aproximación con EPS nominal histórico. El análisis es generado por IA con fines exclusivamente informativos. No constituye asesoramiento financiero regulado.</div>
+  </div>
+</main>
+
+<script>
+const TIPS = {
+  "P/E":           "Price-to-Earnings. Precio dividido las ganancias anuales. Menor = más barato en relación a sus ganancias actuales.",
+  "P/E Fwd":       "P/E Forward. Usa ganancias estimadas próximos 12 meses. Más útil para empresas en crecimiento.",
+  "Shiller P/E":   "CAPE Ratio. Precio dividido el promedio de EPS histórico (aquí usamos EPS nominal como aproximación). Suaviza los ciclos. S&P histórico ~17x. Sobre 25x = caro; sobre 30x = muy caro.",
+  "PEG":           "P/E dividido la tasa de crecimiento de ganancias. PEG menor a 1 = el mercado subestima el crecimiento.",
+  "EV/EBITDA":     "Valor empresa / EBITDA. Ignora estructura de capital e impuestos. Menos de 12x = barato para empresas maduras.",
+  "P/S":           "Precio / Ventas. Útil para empresas que reinvierten agresivamente. Menos de 3x es razonable.",
+  "P/B":           "Precio / Valor contable. Menos de 1x puede indicar subvaluación.",
+  "ROE":           "Return on Equity. Ganancia neta / Patrimonio. Más de 15% = sólido. Más de 25% = excelente. Buffett busca >20% sostenido.",
+  "ROE Histórico": "ROE promedio de los años disponibles en Alpha Vantage. Más revelador que el ROE de un solo año.",
+  "ROA":           "Return on Assets. Ganancia neta / Activos totales. Más de 10% es generalmente bueno.",
+  "Margen Bruto":  "Ingresos menos costo de ventas / Ingresos. Mide la eficiencia del negocio central.",
+  "Margen Op.":    "Ganancia operativa / Ingresos. Mide rentabilidad después de todos los gastos operativos.",
+  "Margen Neto":   "Ganancia neta / Ingresos. Lo que queda para accionistas por cada dólar vendido.",
+  "D/E":           "Deuda total / Patrimonio neto. Alto puede ser riesgoso en entornos de tasas altas.",
+  "FCF":           "Free Cash Flow. Caja operativa menos capex. El dinero real que genera la empresa.",
+  "Beta":          "Volatilidad relativa al mercado. Beta 1.5 = se mueve 50% más que el índice.",
+  "RSI":           "Relative Strength Index. 0–100. Menos de 30 = sobreventa. Más de 70 = sobrecompra.",
+  "Target":        "Price target promedio de analistas del sell-side.",
+};
+
+const BASE = window.location.origin; // http://localhost:8765
+let appHistory = JSON.parse(localStorage.getItem('vs_hist_v2') || '[]');
+
+// ── KEY MANAGEMENT ──
+async function saveKeys() {
+  const ak = document.getElementById('anthropicKey').value.trim();
+  const av = document.getElementById('avKey').value.trim();
+  if (!ak && !av) { alert('Ingresá al menos una key'); return; }
+  try {
+    const res = await fetch(`${BASE}/api/save-keys`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ anthropic: ak, alphavantage: av })
+    });
+    if (!res.ok) throw new Error('Error guardando');
+    await checkKeyStatus();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function checkKeyStatus() {
+  try {
+    const res  = await fetch(`${BASE}/api/keys-status`);
+    const data = await res.json();
+    // Cloud mode: keys come from Railway env vars, hide banner automatically
+    if (data.mode === 'cloud' && data.anthropic && data.alphavantage) {
+      document.getElementById('setupBanner').style.display = 'none';
+      return data;
+    }
+    const sa = document.getElementById('stAnthropic');
+    const sv = document.getElementById('stAV');
+    if (sa) { sa.className = 'sf-status ' + (data.anthropic    ? 'ok' : 'no'); sa.textContent = data.anthropic    ? '✓ Guardada en servidor' : 'Sin key'; }
+    if (sv) { sv.className = 'sf-status ' + (data.alphavantage ? 'ok' : 'no'); sv.textContent = data.alphavantage ? '✓ Guardada en servidor' : 'Sin key'; }
+    if (data.anthropic && data.alphavantage) document.getElementById('setupBanner').style.display = 'none';
+    return data;
+  } catch(e) { return {}; }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  await checkKeyStatus();
+  renderHistory();
+  document.getElementById('tickerInp').addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
+});
+
+function setStatus(txt, state) {
+  document.getElementById('statusTxt').textContent = txt;
+  document.getElementById('dot').className = 'dot ' + (state||'');
+}
+function step(id, state) { const el = document.getElementById(id); if(el) el.className = 'load-step ' + state; }
+
+function ib(key) {
+  const t = TIPS[key]; if (!t) return '';
+  return `<button class="ib">?<div class="tip">${t}</div></button>`;
+}
+function cc(c) { return c==='green'?'g':c==='red'?'r':c==='amber'?'a':''; }
+function ri(lbl, val, col, tip, src) {
+  const cls = cc(col);
+  const badge = src==='live'?'<span class="ri-src live">LIVE</span>':src==='est'?'<span class="ri-src est">EST</span>':'';
+  return `<div class="ri"><div class="ri-l"><span class="ri-lbl">${lbl}</span>${tip?ib(tip):''}</div><div class="ri-r">${badge}<span class="ri-val ${cls}">${val}</span></div></div>`;
+}
+function fmtN(v, d=2) { if(v==null||isNaN(v)) return '—'; return (+v).toFixed(d); }
+function fmtPct(v) { if(v==null||isNaN(v)) return '—'; return (v>0?'+':'')+fmtN(v*100,1)+'%'; }
+function fmtPrice(v) { if(!v||isNaN(v)) return '—'; return '$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtB(v) {
+  if(!v||isNaN(v)) return '—';
+  const a = Math.abs(v);
+  if(a>=1e12) return '$'+fmtN(v/1e12,2)+'T';
+  if(a>=1e9)  return '$'+fmtN(v/1e9,2)+'B';
+  if(a>=1e6)  return '$'+fmtN(v/1e6,2)+'M';
+  return '$'+fmtN(v,0);
+}
+
+// ── ALPHA VANTAGE (via local server proxy) ──
+async function avCall(params) {
+  const res = await fetch(`${BASE}/api/av`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params)
+  });
+  const data = await res.json();
+  if (data.error) throw new Error('Alpha Vantage: ' + data.error);
+  if (data['Note'] || data['Information']) throw new Error('Alpha Vantage: límite de llamadas alcanzado. Esperá 1 min e intentá de nuevo.');
+  return data;
+}
+
+async function fetchAVData(ticker) {
+  const [quote, overview, income, balance] = await Promise.allSettled([
+    avCall({ function: 'GLOBAL_QUOTE',     symbol: ticker }),
+    avCall({ function: 'OVERVIEW',         symbol: ticker }),
+    avCall({ function: 'INCOME_STATEMENT', symbol: ticker }),
+    avCall({ function: 'BALANCE_SHEET',    symbol: ticker }),
+  ]);
+  return {
+    quote:    quote.status    === 'fulfilled' ? quote.value    : null,
+    overview: overview.status === 'fulfilled' ? overview.value : null,
+    income:   income.status   === 'fulfilled' ? income.value   : null,
+    balance:  balance.status  === 'fulfilled' ? balance.value  : null,
+  };
+}
+
+function processAV(ticker, raw) {
+  const D = { ticker, isLive: false, F: {} };
+  const F = D.F;
+
+  const q  = raw.quote?.['Global Quote'] || {};
+  F.price      = parseFloat(q['05. price'])           || null;
+  F.change_pct = parseFloat(q['10. change percent'])  || null;
+
+  const ov = raw.overview || {};
+  if (ov.Symbol) {
+    D.isLive = true;
+    F.name        = ov.Name || ticker;
+    F.sector      = ov.Sector || '—';
+    F.industry    = ov.Industry || '—';
+    F.market_cap  = parseFloat(ov.MarketCapitalization) || null;
+    F.pe_ttm      = parseFloat(ov.PERatio)              || null;
+    F.pe_fwd      = parseFloat(ov.ForwardPE)            || null;
+    F.peg         = parseFloat(ov.PEGRatio)             || null;
+    F.pb          = parseFloat(ov.PriceToBookRatio)     || null;
+    F.ps          = parseFloat(ov.PriceToSalesRatioTTM) || null;
+    F.ev_ebitda   = parseFloat(ov.EVToEBITDA)           || null;
+    F.eps         = parseFloat(ov.EPS)                  || null;
+    F.beta        = parseFloat(ov.Beta)                 || null;
+    F.high52      = parseFloat(ov['52WeekHigh'])         || null;
+    F.low52       = parseFloat(ov['52WeekLow'])          || null;
+    F.target_mean = parseFloat(ov.AnalystTargetPrice)   || null;
+    F.shares      = parseFloat(ov.SharesOutstanding)    || null;
+    F.op_margin   = parseFloat(ov.OperatingMarginTTM)   || null;
+    F.net_margin  = parseFloat(ov.ProfitMargin)         || null;
+    F.roe         = parseFloat(ov.ReturnOnEquityTTM)    || null;
+    F.roa         = parseFloat(ov.ReturnOnAssetsTTM)    || null;
+    F.revenue_ttm = parseFloat(ov.RevenueTTM)           || null;
+    F.ebitda      = parseFloat(ov.EBITDA)               || null;
+    F.book_value  = parseFloat(ov.BookValue)            || null;
+    F.dividend_yield = parseFloat(ov.DividendYield)     || null;
+  }
+
+  // ── INCOME HISTORY → Shiller P/E ──
+  const incomeAnnual = raw.income?.annualReports || [];
+  const epsHist = [], revHist = [], niHist = [];
+  incomeAnnual.slice(0,10).forEach(r => {
+    const ni    = parseFloat(r.netIncome) || null;
+    const rev   = parseFloat(r.totalRevenue) || null;
+    const sh    = F.shares;
+    const eps   = ni && sh && sh > 0 ? ni/sh : parseFloat(r.reportedEPS) || null;
+    if (eps && isFinite(eps) && eps > 0) epsHist.push(eps);
+    if (rev) revHist.push(rev);
+    if (ni)  niHist.push(ni);
+  });
+  F.eps_hist = epsHist;
+  F.rev_hist = revHist;
+
+  if (epsHist.length >= 2 && F.price) {
+    const avg = epsHist.reduce((a,b)=>a+b,0)/epsHist.length;
+    F.shiller_pe   = F.price / avg;
+    F.shiller_note = `Precio / EPS promedio positivo ${epsHist.length} años (nominal)`;
+  } else {
+    F.shiller_pe   = null;
+    F.shiller_note = 'Datos históricos insuficientes';
+  }
+
+  // ── BALANCE → ROE histórico y D/E ──
+  const balAnnual = raw.balance?.annualReports || [];
+  const equityHist = [];
+  balAnnual.slice(0,10).forEach((r,i) => {
+    const eq   = parseFloat(r.totalShareholderEquity) || parseFloat(r.stockholdersEquity) || null;
+    const debt = parseFloat(r.longTermDebt) || parseFloat(r.shortLongTermDebtTotal) || null;
+    if (eq) equityHist.push(eq);
+    if (i === 0) F.debt_equity = (debt && eq && eq > 0) ? debt/eq : null;
+  });
+
+  const roeHist = [];
+  const minL = Math.min(niHist.length, equityHist.length);
+  for (let i = 0; i < minL; i++) {
+    if (niHist[i] && equityHist[i] && equityHist[i] > 0) roeHist.push(niHist[i]/equityHist[i]);
+  }
+  F.roe_hist = roeHist;
+  F.roe_avg  = roeHist.length > 0 ? roeHist.reduce((a,b)=>a+b,0)/roeHist.length : null;
+
+  if (revHist.length >= 2) F.rev_growth = (revHist[0]-revHist[1])/Math.abs(revHist[1]);
+
+  if (incomeAnnual.length > 0) {
+    const r0  = incomeAnnual[0];
+    const op  = parseFloat(r0.operatingCashflow) || null;
+    const cap = parseFloat(r0.capitalExpenditures) || null;
+    if (op && cap) F.fcf = op - Math.abs(cap);
+    else if (op)   F.fcf = op;
+  }
+
+  return D;
+}
+
+// ── MAIN RUN ──
+async function run() {
+  const ticker  = document.getElementById('tickerInp').value.trim().toUpperCase();
+  if (!ticker) { document.getElementById('tickerInp').focus(); return; }
+  const profile = document.getElementById('profileSel').value;
+  const horizon = document.getElementById('horizonSel').value;
+
+  const keys = await checkKeyStatus();
+  if (!keys.anthropic || !keys.alphavantage) {
+    document.getElementById('setupBanner').style.display = 'block';
+    alert('Guardá ambas API keys primero');
+    return;
+  }
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dash').style.display = 'none';
+  document.getElementById('dash').classList.remove('on');
+  document.getElementById('loadWrap').classList.add('on');
+  document.getElementById('loadTk').textContent = ticker;
+  document.getElementById('analyzeBtn').disabled = true;
+  setStatus(`Analizando ${ticker}...`, 'amber');
+  ['s1','s2','s3','s4','s5'].forEach(id => step(id, ''));
+
+  let D = null;
+
+  try {
+    step('s1','active');
+    await new Promise(r=>setTimeout(r,80));
+    step('s1','done'); step('s2','active');
+
+    const raw = await fetchAVData(ticker);
+    step('s2','done'); step('s3','active');
+
+    await new Promise(r=>setTimeout(r,80));
+    step('s3','done'); step('s4','active');
+
+    D = processAV(ticker, raw);
+    await new Promise(r=>setTimeout(r,80));
+    step('s4','done'); step('s5','active');
+
+    // Claude via local proxy
+    const prompt = buildPrompt(ticker, profile, horizon, D);
+    const res = await fetch(`${BASE}/api/anthropic`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error('Anthropic: ' + (err.error?.message || `HTTP ${res.status}`));
+    }
+
+    const resp = await res.json();
+    const txt  = resp.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    const analysis = JSON.parse(txt);
+
+    step('s5','done');
+    render(analysis, ticker, horizon, D);
+    addHistory(ticker, D.F.name || analysis.nombre, analysis.veredicto);
+
+  } catch(e) {
+    document.getElementById('loadWrap').classList.remove('on');
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('emptyState').innerHTML = `
+      <div class="empty-icon">⚠️</div>
+      <div class="empty-h">Error al analizar ${ticker}</div>
+      <div class="empty-p" style="color:var(--red)">${e.message}</div>
+      <div class="empty-p" style="margin-top:10px">Verificá el ticker y las API keys. Alpha Vantage permite 25 llamadas/día en plan gratuito.</div>`;
+    setStatus('Error', 'red');
+  }
+  document.getElementById('analyzeBtn').disabled = false;
+}
+
+function buildPrompt(ticker, profile, horizon, D) {
+  const F = D.F;
+  const upside = F.target_mean && F.price ? ((F.target_mean/F.price-1)*100).toFixed(1)+'%' : '—';
+  const data = `
+DATOS REALES DE ALPHA VANTAGE (${new Date().toLocaleDateString('es-AR')}):
+Empresa: ${F.name||ticker} | Sector: ${F.sector||'—'} / ${F.industry||'—'}
+Precio: ${fmtPrice(F.price)} | Cambio hoy: ${F.change_pct!=null?(F.change_pct>0?'+':'')+fmtN(F.change_pct,2)+'%':'—'}
+Market Cap: ${fmtB(F.market_cap)} | Beta: ${fmtN(F.beta)}
+Máx 52s: ${fmtPrice(F.high52)} | Mín 52s: ${fmtPrice(F.low52)}
+
+VALUACIÓN:
+P/E TTM: ${fmtN(F.pe_ttm)}x | P/E Fwd: ${fmtN(F.pe_fwd)}x | PEG: ${fmtN(F.peg)}
+EV/EBITDA: ${fmtN(F.ev_ebitda)}x | P/S: ${fmtN(F.ps)}x | P/B: ${fmtN(F.pb)}x
+Shiller P/E (aprox.): ${F.shiller_pe?fmtN(F.shiller_pe,1)+'x':'—'} (${F.shiller_note||''})
+Target analistas: ${fmtPrice(F.target_mean)} | Upside vs target: ${upside}
+
+RENTABILIDAD:
+Margen Op.: ${fmtPct(F.op_margin)} | Margen Neto: ${fmtPct(F.net_margin)}
+ROE TTM: ${fmtPct(F.roe)} | ROE histórico avg (${F.roe_hist?.length||0} años): ${fmtPct(F.roe_avg)}
+ROA: ${fmtPct(F.roa)} | D/E: ${fmtN(F.debt_equity)}x
+Ingresos TTM: ${fmtB(F.revenue_ttm)} | Rev. Growth YoY: ${fmtPct(F.rev_growth)}
+EBITDA: ${fmtB(F.ebitda)} | FCF aprox.: ${fmtB(F.fcf)}
+EPS TTM: ${fmtN(F.eps)} | EPS historia (${F.eps_hist?.length||0} años): ${(F.eps_hist||[]).map(e=>fmtN(e,2)).join(', ')}`;
+
+  return `Sos un asesor financiero de valor con 20 años de experiencia. Analizá "${ticker}" para perfil ${profile}, horizonte ${horizon} meses.
+
+${data}
+
+Usá los datos reales como base. Sé honesto si la valuación es cara. Los escenarios parten del precio real (${fmtPrice(F.price)}).
+
+Respondé SOLO JSON válido sin markdown:
+{"nombre":"${F.name||ticker}","sector":"${F.sector||'—'}","veredicto":"COMPRA o MANTENER o VENDER","veredicto_detalle":"frase con datos reales","shiller_interpretacion":"2-3 oraciones sobre Shiller P/E en contexto histórico","roe_interpretacion":"2-3 oraciones sobre calidad del negocio según ROE","metricas":[{"l":"Ingresos TTM","v":"dato real","c":"green|amber|red","s":"crecimiento","tip":""},{"l":"EPS TTM","v":"dato real","c":"green|amber|red","s":"tendencia","tip":""},{"l":"FCF","v":"dato real","c":"green|amber|red","s":"generación caja","tip":"FCF"},{"l":"ROE","v":"dato real","c":"green|amber|red","s":"TTM","tip":"ROE"},{"l":"Margen Op.","v":"dato real","c":"green|amber|red","s":"tendencia","tip":"Margen Op."}],"valuacion":[{"l":"P/E TTM","v":"Xx","c":"green|amber|red","tip":"P/E","src":"live"},{"l":"P/E Forward","v":"Xx","c":"green|amber|red","tip":"P/E Fwd","src":"live"},{"l":"Shiller P/E","v":"Xx","c":"green|amber|red","tip":"Shiller P/E","src":"live"},{"l":"PEG Ratio","v":"X.X","c":"green|amber|red","tip":"PEG","src":"live"},{"l":"EV/EBITDA","v":"Xx","c":"green|amber|red","tip":"EV/EBITDA","src":"live"},{"l":"P/S TTM","v":"Xx","c":"green|amber|red","tip":"P/S","src":"live"},{"l":"P/B","v":"Xx","c":"green|amber|red","tip":"P/B","src":"live"},{"l":"Target analistas","v":"$X,XXX","c":"green","tip":"Target","src":"live"},{"l":"Upside vs target","v":"+XX%","c":"green|amber|red","tip":"Target","src":"live"}],"rentabilidad":[{"l":"Margen Operativo","v":"XX%","c":"green|amber|red","tip":"Margen Op.","src":"live"},{"l":"Margen Neto","v":"XX%","c":"green|amber|red","tip":"Margen Neto","src":"live"},{"l":"ROE TTM","v":"XX%","c":"green|amber|red","tip":"ROE","src":"live"},{"l":"ROE Histórico","v":"XX%","c":"green|amber|red","tip":"ROE Histórico","src":"live"},{"l":"ROA","v":"XX%","c":"green|amber|red","tip":"ROA","src":"live"},{"l":"Deuda/Equity","v":"X.X","c":"green|amber|red","tip":"D/E","src":"live"},{"l":"Rev. Growth","v":"+XX%","c":"green|amber|red","tip":"","src":"live"},{"l":"EBITDA","v":"$XB","c":"green|amber|red","tip":"","src":"live"}],"tecnico":{"soporte_fuerte":"$X,XXX","soporte_critico":"$X,XXX","resistencia_1":"$X,XXX","resistencia_2":"$X,XXX","ath":"máx histórico o 52s","min52":"dato real","high52":"dato real","rsi":"estimado","beta":"dato real","ma200":"estimado","senal":"COMPRA o NEUTRAL o VENTA"},"catalizadores":["c1","c2","c3","c4","c5"],"riesgos":["r1","r2","r3","r4"],"escenarios":{"bull":{"precio":"$X,XXX","upside":"+XX%","prob":"XX%","desc":"descripcion"},"base":{"precio":"$X,XXX","upside":"+XX%","prob":"XX%","desc":"descripcion"},"bear":{"precio":"$X,XXX","upside":"-XX%","prob":"XX%","desc":"descripcion"}},"tesis":"5-6 oraciones con datos reales. Mencionar precio, Shiller P/E, ROE, márgenes y catalizadores.","estrategia":[{"l":"Tranche 1 — Ahora","v":"40% posición · rango basado en precio real","c":"green"},{"l":"Tranche 2 — Si corrige","v":"35% posición · nivel real","c":""},{"l":"Tranche 3 — Post-catalyst","v":"25% posición","c":""},{"l":"Stop de precio","v":"cierre semanal bajo soporte real","c":"red"},{"l":"Stop fundamental","v":"condición de salida","c":"amber"},{"l":"Target 1 (6–9M)","v":"$X,XXX (+XX%) desde precio real","c":"green"},{"l":"Target 2 (${horizon}M)","v":"$X,XXX (+XX%) desde precio real","c":"green"}]}`;
+}
+
+function render(d, ticker, horizon, D) {
+  const F = D.F;
+  const isLive = D.isLive;
+  const price  = fmtPrice(F.price);
+  const chgPct = F.change_pct!=null ? (F.change_pct>0?'+':'')+fmtN(F.change_pct,2)+'%' : '—';
+  const chgCls = (F.change_pct||0) >= 0 ? 'up' : 'dn';
+  const vc     = d.veredicto==='COMPRA'?'buy':d.veredicto==='VENDER'?'sell':'hold';
+
+  document.getElementById('topStrip').innerHTML = `
+    <div class="ts-left">
+      <div><div class="ts-ticker">${ticker}</div><div class="ts-name">${d.nombre||F.name||'—'} · ${d.sector||F.sector||'—'}</div></div>
+      <div class="ts-sep"></div>
+      <div><div class="ts-price">${price}</div><div class="ts-chg ${chgCls}">${chgPct} hoy</div></div>
+      <div class="ts-sep"></div>
+      <div><div class="ts-lbl">Market Cap</div><div class="ts-val">${fmtB(F.market_cap)}</div></div>
+      <div class="ts-sep"></div>
+      <div><div class="ts-lbl">Beta</div><div class="ts-val">${fmtN(F.beta)||'—'}</div></div>
+      ${F.high52?`<div class="ts-sep"></div><div><div class="ts-lbl">Máx 52s</div><div class="ts-val">${fmtPrice(F.high52)}</div></div>`:''}
+    </div>
+    <div style="text-align:right">
+      <div class="verdict-pill ${vc}">${d.veredicto||'—'}</div>
+      <div class="verdict-detail">${d.veredicto_detalle||''}</div>
+    </div>`;
+
+  const lb = '<span class="live-badge">LIVE</span>';
+  const eb = '<span class="est-badge">EST</span>';
+  document.getElementById('srcBar').innerHTML = isLive
+    ? `<span class="src-chip live">✓ DATOS EN TIEMPO REAL — Alpha Vantage</span><span class="src-note">Precio · P/E · EV/EBITDA · Shiller P/E · ROE ${F.roe_hist?.length||0} años · Márgenes · Beta · 52s</span>`
+    : `<span class="src-chip est">⚠ DATOS PARCIALES</span><span class="src-note">Alpha Vantage no devolvió datos completos. Verificá el ticker o el límite de llamadas.</span>`;
+  document.getElementById('valBadge').innerHTML  = isLive ? lb : eb;
+  document.getElementById('profBadge').innerHTML = isLive ? lb : eb;
+  document.getElementById('techBadge').innerHTML = isLive ? lb : eb;
+
+  // Shiller + ROE especiales
+  const speC = !F.shiller_pe?'':F.shiller_pe<20?'g':F.shiller_pe<30?'a':'r';
+  const roeC = !F.roe?'':F.roe>0.20?'g':F.roe>0.08?'a':'r';
+  document.getElementById('specialGrid').innerHTML = `
+    <div class="spc">
+      <div class="spc-title">✦ Shiller P/E (CAPE) ${ib('Shiller P/E')}</div>
+      <div class="spc-val ${speC}">${F.shiller_pe?fmtN(F.shiller_pe,1)+'x':'—'}</div>
+      <div class="spc-sub">${F.shiller_note||'—'}</div>
+      <div class="spc-interp ${speC||'a'}">${d.shiller_interpretacion||'—'}</div>
+    </div>
+    <div class="spc">
+      <div class="spc-title">✦ ROE & Calidad del negocio ${ib('ROE')}</div>
+      <div class="spc-val ${roeC}">${fmtPct(F.roe)}</div>
+      <div class="spc-sub">Promedio histórico (${F.roe_hist?.length||0} años): <strong style="color:var(--text)">${fmtPct(F.roe_avg)}</strong> ${ib('ROE Histórico')}</div>
+      <div class="spc-interp ${roeC||'a'}">${d.roe_interpretacion||'—'}</div>
+    </div>`;
+
+  document.getElementById('metricsGrid').innerHTML = (d.metricas||[]).map(m=>`
+    <div class="mc">
+      <div class="mc-lbl">${m.l} ${ib(m.tip||m.l)}</div>
+      <div class="mc-val ${cc(m.c)}">${m.v}</div>
+      ${m.s?`<div class="mc-sub">${m.s}</div>`:''}
+      <div class="mc-src ${isLive?'live':'est'}">${isLive?'LIVE':'EST'}</div>
+    </div>`).join('');
+
+  document.getElementById('valRows').innerHTML  = (d.valuacion  ||[]).map(r=>ri(r.l,r.v,r.c,r.tip,isLive?'live':'est')).join('');
+  document.getElementById('profRows').innerHTML = (d.rentabilidad||[]).map(r=>ri(r.l,r.v,r.c,r.tip,isLive?'live':'est')).join('');
+
+  const t    = d.tecnico||{};
+  const sCls = t.senal==='COMPRA'?'green':t.senal==='VENTA'?'red':'amber';
+  document.getElementById('techRows').innerHTML =
+    ri('Soporte fuerte',    t.soporte_fuerte||'—',  'green') +
+    ri('Soporte crítico',   t.soporte_critico||'—', 'green') +
+    ri('Resistencia 1',     t.resistencia_1||'—',   'amber') +
+    ri('Resistencia 2',     t.resistencia_2||'—',   'amber') +
+    ri('RSI (14)',          t.rsi||'—',              '',     'RSI') +
+    ri('Beta',              fmtN(F.beta)||'—',       '',     'Beta', isLive?'live':'') +
+    ri('Posición vs MA200', t.ma200||'—') +
+    ri('Señal técnica',     t.senal||'—',            sCls);
+
+  const mn  = F.low52  || 0;
+  const hi  = F.high52 || 1;
+  const cur = F.price  || 0;
+  const pct = hi>mn ? Math.min(97,Math.max(3,(cur-mn)/(hi-mn)*100)) : 50;
+  const dHi = hi>0 ? (((cur-hi)/hi)*100).toFixed(1) : '—';
+  document.getElementById('techRange').innerHTML = `
+    <div class="rbar-labels"><span>Mín 52s: ${fmtPrice(mn)}</span><span style="color:var(--gold);font-weight:600;">${fmtPrice(cur)} (${dHi}% vs máx 52s)</span><span>Máx 52s: ${fmtPrice(hi)}</span></div>
+    <div class="rbar-track" style="margin:8px 0;"><div class="rbar-fill"></div><div class="rbar-dot" style="left:${pct}%"></div></div>
+    <div class="rbar-hint">Datos reales de Alpha Vantage · Rango de 52 semanas</div>`;
+
+  document.getElementById('cats').innerHTML  = (d.catalizadores||[]).map(c=>`<div class="tag g">${c}</div>`).join('');
+  document.getElementById('risks').innerHTML = (d.riesgos||[]).map(r=>`<div class="tag r">${r}</div>`).join('');
+
+  const sc = d.escenarios||{};
+  document.getElementById('scGrid').innerHTML = `
+    <div class="scn bull"><div class="scn-h"><span class="scn-name">🐂 Toro</span><span class="scn-prob">${sc.bull?.prob||'—'}</span></div><div class="scn-price">${sc.bull?.precio||'—'}</div><div class="scn-up">${sc.bull?.upside||'—'} desde ${fmtPrice(cur)}</div><div class="scn-desc">${sc.bull?.desc||'—'}</div></div>
+    <div class="scn base"><div class="scn-h"><span class="scn-name">📊 Base</span><span class="scn-prob">${sc.base?.prob||'—'}</span></div><div class="scn-price">${sc.base?.precio||'—'}</div><div class="scn-up">${sc.base?.upside||'—'} desde ${fmtPrice(cur)}</div><div class="scn-desc">${sc.base?.desc||'—'}</div></div>
+    <div class="scn bear"><div class="scn-h"><span class="scn-name">🐻 Oso</span><span class="scn-prob">${sc.bear?.prob||'—'}</span></div><div class="scn-price">${sc.bear?.precio||'—'}</div><div class="scn-up">${sc.bear?.upside||'—'} desde ${fmtPrice(cur)}</div><div class="scn-desc">${sc.bear?.desc||'—'}</div></div>`;
+
+  document.getElementById('tesisTxt').textContent = d.tesis || '—';
+  document.getElementById('entryRows').innerHTML  = (d.estrategia||[]).map(r=>ri(r.l,r.v,r.c)).join('');
+
+  document.getElementById('loadWrap').classList.remove('on');
+  document.getElementById('dash').style.display = 'block';
+  setTimeout(()=>document.getElementById('dash').classList.add('on'),10);
+  setStatus(`${ticker} · ${fmtPrice(cur)} ✓`, 'green');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function addHistory(ticker, nombre, veredicto) {
+  appHistory = appHistory.filter(h=>h.t!==ticker);
+  appHistory.unshift({t:ticker,n:nombre,v:veredicto});
+  if(appHistory.length>8) appHistory.pop();
+  localStorage.setItem('vs_hist_v2', JSON.stringify(appHistory));
+  renderHistory();
+}
+function renderHistory() {
+  if(!appHistory.length) return;
+  document.getElementById('histRow').style.display='flex';
+  document.getElementById('histChips').innerHTML = appHistory.map(h=>
+    `<div class="hist-chip" onclick="loadHist('${h.t}')">${h.t}</div>`).join('');
+}
+function loadHist(t) { document.getElementById('tickerInp').value=t; run(); }
+</script>
+</body>
+</html>
